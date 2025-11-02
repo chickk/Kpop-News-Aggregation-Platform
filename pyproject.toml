@@ -1,0 +1,24 @@
+[tool.poetry]
+package-mode = false
+[tool.poetry.requires-plugins]
+poetry-plugin-export = ">=1.8"
+
+[project]
+name = "idoltrackerserver"
+version = "0.1.0"
+description = "Server for IdolTracker"
+authors = [
+    {name = "Henry Bodwell",email = "henrybod@vt.edu"}
+]
+readme = "README.md"
+requires-python = ">=3.12,<3.14"
+dependencies = [
+    "dspy-ai (>=3.0.3,<4.0.0)",
+    "pydantic (>=2.12.3,<3.0.0)",
+    "fastapi (>=0.120.4,<0.121.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
