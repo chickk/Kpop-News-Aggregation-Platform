@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 from app.models.articles import ArticleExtract
 from app.models.artists import Artist, ArtistGenerated
 from app.models.groups import Group, GroupGenerated
-from app.models.sources import Source
+from app.models.sources import Source, SourceInput
 
 
 # Input  Definitions
@@ -43,5 +43,5 @@ class GroupExtractSignature(Signature):
 
 
 class SourceExtractSignature(Signature):
-    source_name: str = InputField()
+    source: SourceInput = InputField()
     source_output: Source = OutputField()

@@ -1,15 +1,17 @@
 from typing import List
 from dspy import Module, ChainOfThought
+from app.models.sources import SourceInput
 from app.pipeline.llm_modules.signatures import (
     ArticleExtractSignature,
     ArticleInput,
     ArtistInput,
     ArtistPageExtractSignature,
+    SourceExtractSignature,
 )
 
 
 class ArtistExtractor(Module):
-    """Async DSPy module for extracting artist information using biography search and LLM extraction."""
+    """Async DSPy module for extracting artist information using and LLM extraction."""
 
     def __init__(self):
         self.artist_extractor = ChainOfThought(ArtistPageExtractSignature)
@@ -38,3 +40,17 @@ class ArticleExtractor(Module):
 
         except Exception as e:
             raise Exception(f"Error during article extraction: {str(e)}")
+
+
+class SourceExtractor(Module):
+    """Async DSPy module for generating Source information using LLMs."""
+
+    def __init__(self):
+        self.extractor = ChainOfThought(SourceExtractSignature)
+
+    async def aforward(self, source_input: SourceInput):
+        try:
+            return await self.extractor.acall(source=source_input)
+
+        except Exception as e:
+            raise Exception(f"Error during source generation: {str(e)}")

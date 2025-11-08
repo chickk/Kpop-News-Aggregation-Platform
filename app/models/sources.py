@@ -11,7 +11,7 @@ class RawSource(BaseModel):
 
 
 class SourceInput(BaseModel):
-    name: str = Field(
+    title: str = Field(
         ..., description="Name of the publishing news org, blog, magazine etc"
     )
     description: Optional[str] = Field(description="Description of source if avaliable")
