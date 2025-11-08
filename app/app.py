@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify, render_template_string
-from articles import Article
-from events import Event
+from models.articles import Article
+from models.events import Event
 from datetime import datetime
 
 app = Flask(__name__)
