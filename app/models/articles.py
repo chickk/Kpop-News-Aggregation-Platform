@@ -2,6 +2,25 @@ from datetime import date, datetime
 from typing import TYPE_CHECKING, List, Optional
 from pydantic import BaseModel, Field
 
+from app.models.sources import RawSource
+
+
+class RawArticle(BaseModel):
+    """
+    Raw article data from external sources (before processing).
+    This is different from your Article model which has extracted/processed data.
+    """
+
+    title: str
+    text: str
+    url: str
+    author: Optional[str] = None
+    publication_date: Optional[datetime] = None
+    raw_source: RawSource
+    language: Optional[str] = None
+    processed: bool = False
+    image_urls: List[str] = []
+
 
 class ArticleExtract(BaseModel):
     summary: str = Field(..., description="Short, one paragraph summary of the article")

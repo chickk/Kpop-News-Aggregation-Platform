@@ -3,22 +3,7 @@ from datetime import datetime
 from typing import List, Optional
 from pydantic import BaseModel
 
-
-class RawArticle(BaseModel):
-    """
-    Raw article data from external sources (before processing).
-    This is different from your Article model which has extracted/processed data.
-    """
-
-    title: str
-    text: str
-    url: str
-    author: Optional[str] = None
-    publication_date: Optional[datetime] = None
-    source_name: str
-    language: Optional[str] = None
-    processed: bool = False
-    image_urls: List[str] = []
+from app.models.articles import RawArticle
 
 
 class INewsAggregator(ABC):

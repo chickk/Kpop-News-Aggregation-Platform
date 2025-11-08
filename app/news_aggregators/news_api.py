@@ -4,14 +4,13 @@ from typing import List, Optional
 from dotenv import load_dotenv
 from eventregistry import (
     EventRegistry,
-    QueryArticles,
     QueryArticlesIter,
     ComplexArticleQuery,
     CombinedQuery,
     BaseQuery,
 )
 
-from app.interfaces.news_aggregator import INewsAggregator, RawArticle
+from app.interfaces.news_aggregator import INewsAggregator, RawArticle, RawSource
 
 
 class NewsAPIAggregator(INewsAggregator):
@@ -120,10 +119,26 @@ class NewsAPIAggregator(INewsAggregator):
                 elif isinstance(article_data["author"], str):
                     author = article_data["author"]
 
-            # Extract source name
-            source_name = "Unknown"
+            # Extract source information
+            source = None
             if article_data.get("source") and isinstance(article_data["source"], dict):
-                source_name = article_data["source"].get("title", "Unknown")
+                source_data = article_data["source"]
+                source_name = source_data.get("title", "Unknown")
+                source_description = source_data.get("description")
+                source_image = source_data.get("image")
+
+                source_country_code = None
+                if source_data.get("location") and isinstance(
+                    source_data["location"], dict
+                ):
+                    source_country_code = source_data["location"].get("code2")
+
+                source = RawSource(
+                    title=source_name,
+                    description=source_description,
+                    image=source_image,
+                    country_code=source_country_code,
+                )
 
             image_urls = []
             if article_data.get("image"):
@@ -135,7 +150,7 @@ class NewsAPIAggregator(INewsAggregator):
                 url=article_data.get("url", ""),
                 author=author,
                 publication_date=pub_date,
-                source_name=source_name,
+                raw_source=source,
                 language=article_data.get("lang"),
                 processed=False,
                 image_urls=image_urls,
@@ -164,7 +179,7 @@ if __name__ == "__main__":
         print(f"\nFetched {len(articles)} articles:")
         for i, article in enumerate(articles[:5], 1):  # Show first 5
             print(f"\n{i}. {article.title}")
-            print(f"   Source: {article.source_name}")
+            print(f"   Source: {article.raw_source.title}")
             print(f"   Date: {article.publication_date}")
             print(f"   URL: {article.url}")
             if article.image_urls:
