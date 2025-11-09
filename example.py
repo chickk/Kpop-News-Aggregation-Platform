@@ -44,10 +44,10 @@ async def main():
     #         article_title=example_article.title, article_text=example_article.text
     #     )
 
-    #     response = await extractor.aforward(article=article_in)
+    #     response = await extractor.aforward(article_input=article_in)
     #     # print("Extraction Response:", response)
 
-    #     article_extract = response.extracted_information
+    #     article_extract = response.article_output
     #     print("\nExtracted Info:", article_extract)
 
     #     final_article = Article(
