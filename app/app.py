@@ -44,30 +44,9 @@ HTML_FORM = """
 </head>
 <body>
     <div class="section">
-        <h2>Test Article POST Request</h2>
-        <div class="form-group">
-            <label>Article JSON Data:</label>
-            <textarea id="jsonData">{
-    "title": "Rock Legends Reunite for Historic Concert",
-    "author": "Jane Smith",
-    "source_id": "music_news_daily",
-    "publication_date": "2025-11-06T02:36:39.000Z",
-    "text": "In an unexpected turn of events, legendary rock band Pink Floyd...",
-    "language": "en",
-    "summary": "Historic reunion concert featuring Pink Floyd with special appearances from Paul McCartney.",
-    "sentiment": 0.9,
-    "artists_mentioned": ["Paul McCartney", "David Gilmour", "Roger Waters"],
-    "groups_mentioned": ["Pink Floyd", "The Beatles"],
-    "tags": ["rock", "reunion", "concert"],
-    "countries": ["United Kingdom", "USA"],
-    "in_event": true,
-    "event_id": "reunion_2025",
-    "groups_mentioned_ids": ["pf_001", "tb_001"],
-    "artists_mentioned_ids": ["pm_001", "dg_001", "rw_001"]
-}</textarea>
-    </div>
-    <button onclick="sendArticleRequest()">Send Article POST Request</button>
-    <div id="articleResponse" class="response"></div>
+        <h2>Test GET /api/content/latest</h2>
+        <button onclick="fetchLatest()">Get Latest Content</button>
+        <div id="latestResponse" class="response"></div>
     </div>
 
     <div class="section">
@@ -91,21 +70,15 @@ HTML_FORM = """
     </div>
 
     <script>
-        function sendArticleRequest() {
-            fetch('/api/data', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: document.getElementById('jsonData').value
-            })
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('articleResponse').innerText = JSON.stringify(data, null, 2);
-            })
-            .catch(error => {
-                document.getElementById('articleResponse').innerText = 'Error: ' + error;
-            });
+        function fetchLatest() {
+            fetch('/api/content/latest')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('latestResponse').innerText = JSON.stringify(data, null, 2);
+                })
+                .catch(error => {
+                    document.getElementById('latestResponse').innerText = 'Error: ' + error;
+                });
         }
 
         function sendEventRequest() {
@@ -134,32 +107,26 @@ HTML_FORM = """
 def hello():
     return render_template_string(HTML_FORM)
 
-
-@app.route("/api/data", methods=["POST"])
+@app.route('/api/data', methods=['POST'])
 def post_data():
     try:
         data = request.get_json()
         # Convert the publication_date string to datetime if it exists
-        if "publication_date" in data and data["publication_date"]:
-            data["publication_date"] = datetime.fromisoformat(
-                data["publication_date"].replace("Z", "+00:00")
-            )
-
+        if 'publication_date' in data and data['publication_date']:
+            data['publication_date'] = datetime.fromisoformat(data['publication_date'].replace('Z', '+00:00'))
+        
         # Validate the data against our Pydantic model
         article = Article(**data)
-
-        return (
-            jsonify(
-                {
-                    "message": "Article data received and validated successfully",
-                    "data": article.model_dump(mode="json"),
-                }
-            ),
-            201,
-        )
+        
+        return jsonify({
+            "message": "Article data received and validated successfully",
+            "data": article.model_dump(mode='json')
+        }), 201
     except Exception as e:
-        return jsonify({"error": "Validation error", "details": str(e)}), 400
-
+        return jsonify({
+            "error": "Validation error",
+            "details": str(e)
+        }), 400
 
 @app.route("/api/events/merge", methods=["POST"])
 def merge_articles_to_event():
