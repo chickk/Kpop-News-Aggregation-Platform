@@ -41,7 +41,7 @@ class ArtistExtractor(Module):
 class ArticleExtractor(Module):
     """
     Async DSPy module for extracting artist information using biography search and LLM extraction.
-    returns
+    Returns:
         prediction object with article_output
     """
 
@@ -58,7 +58,7 @@ class ArticleExtractor(Module):
 
 class GroupExtractor(Module):
     """
-    returns
+    Returns:
         prediction object with group_output
     """
 
@@ -75,7 +75,7 @@ class GroupExtractor(Module):
 
 class SourceExtractor(Module):
     """Async DSPy module for generating Source information using LLMs.
-    returns
+    Returns:
         prediction object with source_output
     """
 
@@ -92,7 +92,7 @@ class SourceExtractor(Module):
 
 class EventExtractor(Module):
     """Async DSPy module for generating Source information using LLMs.
-    returns
+    Returns:
         prediction object with source_output
     """
 

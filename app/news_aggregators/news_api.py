@@ -10,7 +10,9 @@ from eventregistry import (
     BaseQuery,
 )
 
-from app.interfaces.news_aggregator import INewsAggregator, RawArticle, RawSource
+from app.interfaces.news_aggregator import INewsAggregator
+from app.models.articles import RawArticle
+from app.models.sources import RawSource
 
 
 class NewsAPIAggregator(INewsAggregator):
@@ -177,7 +179,7 @@ if __name__ == "__main__":
         )
 
         print(f"\nFetched {len(articles)} articles:")
-        for i, article in enumerate(articles[:5], 1):  # Show first 5
+        for i, article in enumerate(articles[:5], 1):
             print(f"\n{i}. {article.title}")
             print(f"   Source: {article.raw_source.title}")
             print(f"   Date: {article.publication_date}")

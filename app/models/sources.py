@@ -17,11 +17,14 @@ class SourceInput(BaseModel):
         ..., description="Name of the publishing news org, blog, magazine etc"
     )
     description: Optional[str] = Field(
-        description="Description of source if avaliable,"
+        default=None, description="Description of source if avaliable,"
     )
-    language: Optional[str] = Field(description="Primary language of the source")
+    language: Optional[str] = Field(
+        default=None, description="Primary language of the source"
+    )
     country_code: Optional[str] = Field(
-        description="Country code of primary location of source if available"
+        default=None,
+        description="Country code of primary location of source if available",
     )
 
 
@@ -33,7 +36,7 @@ class Source(BaseModel):
         description="One Paragraph description of the publisher, should read like wikipedia"
     )
     formed: Optional[date] = Field(
-        description="When was the publication founded? if known"
+        default=None, description="When was the publication founded? if known"
     )
     language: str = Field(description="What is the primary language of the publication")
     countries: List[str] = Field(

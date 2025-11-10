@@ -45,12 +45,12 @@ class ArticleExtract(BaseModel):
 
 class Article(ArticleExtract):
     title: str
-    author: Optional[str]
+    author: Optional[str] = None
     source_id: str
-    publication_date: Optional[datetime]
+    publication_date: Optional[datetime] = None
     text: str
     language: str
     in_event: bool = Field(default=False)
-    event_id: Optional[str]
+    event_id: Optional[str] = None
     groups_mentioned_ids: List[str]
     artists_mentioned_ids: List[str]

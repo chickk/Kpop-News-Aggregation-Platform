@@ -26,9 +26,8 @@ class IUnitOfWork(ABC):
             await unit_of_work.commit()
     """
 
-    # Repository properties
-    raw_articles: IRawArticleRepository  # Staging area for unprocessed articles
-    articles: IArticleRepository  # Processed articles
+    raw_articles: IRawArticleRepository
+    articles: IArticleRepository
     artists: IArtistRepository
     groups: IGroupRepository
     events: IEventRepository
