@@ -1,12 +1,25 @@
 from datetime import datetime
-from typing import List, Optional, TYPE_CHECKING
+from typing import List
 from pydantic import BaseModel, Field
 
 
-class Event(BaseModel):
-    title: str
-    description: str
-    event_date: datetime
+class EventExtraction(BaseModel):
+    title: str = Field(
+        description="Short descriptive title of the event, ie 2025 Met Gala Reactions"
+    )
+    summary: str = Field(
+        description="One Paragraph summary of the key happenings at the event"
+    )
+    synthesized_text: str = Field(
+        description="Longer form synthesis of all text of articles or events that make up the event."
+        " Should capture all the key details without being repetive."
+    )
+    event_date: datetime = Field(
+        description="The date the event took place, if it took place over multiple days, either select the first date or the day of highest significance to the event"
+    )
+
+
+class Event(EventExtraction):
     article_ids: List[str]
     article_count: int = 0
     artist_ids: List[str]
