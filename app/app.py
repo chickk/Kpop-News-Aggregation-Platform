@@ -1,7 +1,9 @@
+from app.data_layer.mongo_database import init_db
 from flask import Flask, request, jsonify, render_template_string
 from models.articles import Article
 from models.events import Event
 from datetime import datetime
+
 
 app = Flask(__name__)
 
@@ -22,11 +24,11 @@ SAMPLE_ARTICLE = {
     "in_event": True,
     "event_id": "reunion_2025",
     "groups_mentioned_ids": ["pf_001", "tb_001"],
-    "artists_mentioned_ids": ["pm_001", "dg_001", "rw_001"]
+    "artists_mentioned_ids": ["pm_001", "dg_001", "rw_001"],
 }
 
 # HTML form for testing POST requests
-HTML_FORM = '''
+HTML_FORM = """
 <!DOCTYPE html>
 <html>
 <head>
@@ -125,65 +127,77 @@ HTML_FORM = '''
     </script>
 </body>
 </html>
-'''
+"""
 
-@app.route('/')
+
+@app.route("/")
 def hello():
     return render_template_string(HTML_FORM)
 
-@app.route('/api/data', methods=['POST'])
+
+@app.route("/api/data", methods=["POST"])
 def post_data():
     try:
         data = request.get_json()
         # Convert the publication_date string to datetime if it exists
-        if 'publication_date' in data and data['publication_date']:
-            data['publication_date'] = datetime.fromisoformat(data['publication_date'].replace('Z', '+00:00'))
-        
+        if "publication_date" in data and data["publication_date"]:
+            data["publication_date"] = datetime.fromisoformat(
+                data["publication_date"].replace("Z", "+00:00")
+            )
+
         # Validate the data against our Pydantic model
         article = Article(**data)
-        
-        return jsonify({
-            "message": "Article data received and validated successfully",
-            "data": article.model_dump(mode='json')
-        }), 201
-    except Exception as e:
-        return jsonify({
-            "error": "Validation error",
-            "details": str(e)
-        }), 400
 
-@app.route('/api/events/merge', methods=['POST'])
+        return (
+            jsonify(
+                {
+                    "message": "Article data received and validated successfully",
+                    "data": article.model_dump(mode="json"),
+                }
+            ),
+            201,
+        )
+    except Exception as e:
+        return jsonify({"error": "Validation error", "details": str(e)}), 400
+
+
+@app.route("/api/events/merge", methods=["POST"])
 def merge_articles_to_event():
     try:
         data = request.get_json()
-        
+
         # create events
         event_data = {
-            "title": data['title'],
-            "description": data['description'],
-            "event_date": datetime.fromisoformat(data['event_date'].replace('Z', '+00:00')),
-            "article_ids": data['article_ids'],
-            "article_count": len(data['article_ids']),
-            "artist_ids": data.get('artist_ids', []),
-            "group_ids": data.get('group_ids', []),
-            "tags": data.get('tags', []),
-            "countries": data.get('countries', []),
-            "avg_sentiment": data.get('avg_sentiment', 0.0)
+            "title": data["title"],
+            "description": data["description"],
+            "event_date": datetime.fromisoformat(
+                data["event_date"].replace("Z", "+00:00")
+            ),
+            "article_ids": data["article_ids"],
+            "article_count": len(data["article_ids"]),
+            "artist_ids": data.get("artist_ids", []),
+            "group_ids": data.get("group_ids", []),
+            "tags": data.get("tags", []),
+            "countries": data.get("countries", []),
+            "avg_sentiment": data.get("avg_sentiment", 0.0),
         }
-        
+
         # Validate the data
         event = Event(**event_data)
-        
-        return jsonify({
-            "message": "Articles merged into event successfully",
-            "event": event.model_dump(mode='json')
-        }), 201
-        
-    except Exception as e:
-        return jsonify({
-            "error": "Event creation error",
-            "details": str(e)
-        }), 400
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5001, debug=True)
+        return (
+            jsonify(
+                {
+                    "message": "Articles merged into event successfully",
+                    "event": event.model_dump(mode="json"),
+                }
+            ),
+            201,
+        )
+
+    except Exception as e:
+        return jsonify({"error": "Event creation error", "details": str(e)}), 400
+
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5001, debug=True)
