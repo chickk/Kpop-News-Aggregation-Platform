@@ -1,0 +1,37 @@
+import asyncio
+from beanie import init_beanie
+from pymongo import AsyncMongoClient
+
+from app.data_layer.schemas import Article_db, Artist_db, Event_db, Group_db, Source_db
+
+
+async def init_db(URI: str = None):
+    """
+    Initializes the Beanie connection to the database.
+    """
+
+    if not URI:
+        raise ValueError("URI environment variable is not set")
+    client = AsyncMongoClient(URI)
+
+    await init_beanie(
+        database=client.get_database("idolTracker"),
+        document_models=[
+            Article_db,
+            Source_db,
+            Artist_db,
+            Group_db,
+            Event_db,
+        ],
+    )
+    print("Database initialized successfully.")
+
+
+async def main():
+    URI = "mongodb://localhost:27017/idolTracker"
+    await init_db(URI=URI)
+    print("db started")
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

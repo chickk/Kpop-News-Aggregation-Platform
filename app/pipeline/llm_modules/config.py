@@ -10,9 +10,6 @@ def setup_dspy(
 ) -> LM:
     """Creates and returns a DSPy language model without configuring global settings.
 
-    In async environments, use dspy.context(lm=lm) instead of dspy.settings.configure()
-    to set the language model for specific async tasks.
-
     Args:
         model: The model to use (default: openai/gpt-4o-mini)
         api_key: OpenAI API key

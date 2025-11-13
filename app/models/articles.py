@@ -19,6 +19,7 @@ class RawArticle(BaseModel):
     language: Optional[str] = None
     processed: bool = False
     image_urls: List[str] = []
+    video_url: Optional[str] = None
 
 
 class ArticleExtract(BaseModel):
@@ -49,6 +50,8 @@ class Article(ArticleExtract):
     source_id: str
     publication_date: Optional[datetime] = None
     text: str
+    images: List[str] = []
+    video: Optional[str] = None
     language: str
     in_event: bool = Field(default=False)
     event_id: Optional[str] = None
