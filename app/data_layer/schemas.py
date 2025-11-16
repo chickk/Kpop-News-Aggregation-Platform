@@ -22,7 +22,9 @@ class BaseDocument(Document):
     @before_event(Insert)
     def set_time(self):
         # Still can cover "None" before inserting a document
-        self.created, self.modified = datetime.now()
+        now = datetime.now()
+        self.created = now
+        self.modified = now
 
     @before_event([Update, Save])
     def update_modified_time(self):
