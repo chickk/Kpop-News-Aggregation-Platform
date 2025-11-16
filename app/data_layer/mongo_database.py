@@ -18,7 +18,7 @@ async def init_db(URI: str = None):
         database=client.get_database("idolTracker"),
         document_models=[
             Article_db,
-            Source_db,
+            Source_db, 
             Artist_db,
             Group_db,
             Event_db,
