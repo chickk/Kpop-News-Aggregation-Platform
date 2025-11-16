@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List, Optional
 from pydantic import BaseModel, Field
-from app.models.sources import RawSource
+from .sources import RawSource
 
 
 class RawArticle(BaseModel):
@@ -50,7 +50,7 @@ class Article(ArticleExtract):
     source_id: str
     publication_date: Optional[datetime] = None
     text: str
-    images: List[str] = []
+    images: List[str] = Field(default_factory=list)
     video: Optional[str] = None
     language: str
     in_event: bool = Field(default=False)
