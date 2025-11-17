@@ -1,12 +1,11 @@
 from abc import ABC, abstractmethod
-from datetime import datetime
-from typing import List, Optional
+from typing import List
 
-from app.models.articles import Article
+from app.models.articles import Article, RawArticle
 from app.models.artists import Artist
 from app.models.groups import Group
 from app.models.events import Event
-from app.models.sources import Source
+from app.models.sources import RawSource, Source
 
 
 class iNLPModule(ABC):
@@ -32,45 +31,19 @@ class iNLPModule(ABC):
 
     @staticmethod
     @abstractmethod
-    def create_article(
-        article_title: str,
-        article_text: str,
-        source: str,
-        language: str,
-        images: List[str] = [],
-        video: Optional[str] = None,
-        publication_date: Optional[datetime] = None,
-        author: Optional[str] = None,
-    ) -> Article:
+    def create_article(raw_article: RawArticle) -> Article:
         """Create an article using the response fields from the news aggregator"""
         pass
 
     @staticmethod
     @abstractmethod
-    def create_source(
-        title: str,
-        description: str,
-        language: str,
-        country_code: str,
-    ) -> Source:
+    def create_source(raw_source: RawSource) -> Source:
         """Create a source using the response fields from the news aggregator"""
         pass
 
     @staticmethod
     @abstractmethod
-    def create_all_from_article(
-        article_title: str,
-        article_text: str,
-        source_title: str,
-        source_language: str,
-        source_description: str,
-        souce_country_code: str,
-        language: str,
-        images: List[str] = [],
-        video: Optional[str] = None,
-        publication_date: Optional[datetime] = None,
-        author: Optional[str] = None,
-    ) -> List:
+    def create_all_from_article(raw_article: RawArticle) -> List:
         """
         Given an article from news aggregator, create an article,
         and where appropriate create artists, groups, events and sources
