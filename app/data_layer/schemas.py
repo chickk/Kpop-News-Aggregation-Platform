@@ -6,7 +6,7 @@ from pymongo import IndexModel, ASCENDING, TEXT
 from typing import Optional
 from pydantic import Field
 
-from app.models.articles import Article
+from app.models.articles import Article, RawArticle
 from app.models.artists import Artist
 from app.models.events import Event
 from app.models.groups import Group
@@ -51,10 +51,30 @@ class Article_db(BaseDocument, Article):
     class Settings:
         name = "articles"
         indexes = [
-            IndexModel([("title", ASCENDING)]),
+            IndexModel([("title", ASCENDING)]), # search_by_text
             IndexModel([("url", ASCENDING)], unique=True),
             IndexModel([("article_hash", ASCENDING)], unique=True),
             IndexModel([("text", TEXT)]),
+            IndexModel([("source_id", ASCENDING)]), # get_by_source
+            IndexModel([("artists_mentioned_ids", ASCENDING)]), # get_by_artist
+            IndexModel([("groups_mentioned_ids", ASCENDING)]), # get_by_groups
+            IndexModel([("event_id", ASCENDING)]), # get_by_event
+            IndexModel([("publication_date", ASCENDING)]), # get_by_date_range
+            IndexModel([("tags", ASCENDING)]), # get_by_tags
+        ]
+
+class RawArticle_db(BaseDocument, RawArticle):
+    """
+    RawArticle's Beanie Document Model.
+    To store unprocessed articles fetched from new_aggregator(NewsApi).
+    """
+    class Settings:
+        name = "raw_articles"
+        indexes = [
+            IndexModel([("url", ASCENDING)], unique=True), # used in get_by_url and deduplication
+            IndexModel([("processed", ASCENDING)]), # used in get_unprocessed
+            IndexModel([("publication_date", ASCENDING)]), # used in get_by_date_range
+            IndexModel([("raw_source.title", ASCENDING)]), # used in get_by_source
         ]
 
 
@@ -62,9 +82,12 @@ class Artist_db(BaseDocument, Artist):
     class Settings:
         name = "artists"
         indexes = [
-            IndexModel([("name", ASCENDING)]), # Different artists may have same names
+            IndexModel([("name", TEXT)]), # Different artists may have same names
             IndexModel([("group_ids", ASCENDING)]), 
             IndexModel([("tags", ASCENDING)]), 
+            IndexModel([("is_active", ASCENDING)]),
+            IndexModel([("countries", ASCENDING)]),
+            IndexModel([("career_start", ASCENDING)])
         ]
 
 
@@ -72,9 +95,10 @@ class Source_db(BaseDocument, Source):
     class Settings:
         name = "sources"
         indexes = [
-            IndexModel([("name", ASCENDING)], unique=True), # Source name should be unique
+            IndexModel([("name", TEXT)], unique=True), # Source name should be unique
             IndexModel([("language", ASCENDING)]),
             IndexModel([("countries", ASCENDING)]),
+            IndexModel([("tags", ASCENDING)])
         ]
 
 
@@ -83,9 +107,13 @@ class Group_db(BaseDocument, Group):
     class Settings:
         name = "groups"
         indexes = [
-            IndexModel([("name", ASCENDING)]), # Different groups may have same names
+            IndexModel([("name", TEXT)]), # Different groups may have same names
             IndexModel([("artist_ids", ASCENDING)]),
             IndexModel([("tags", ASCENDING)]),
+            IndexModel([("is_active", ASCENDING)]),
+            IndexModel([("countries", ASCENDING)]),
+            IndexModel([("fromed", ASCENDING)]),
+            IndexModel([("disbanded", ASCENDING)]),
         ]
 
 
@@ -100,4 +128,5 @@ class Event_db(BaseDocument, Event):
             IndexModel([("article_ids", ASCENDING)]),
             IndexModel([("tags", ASCENDING)]),
             IndexModel([("avg_sentiment", ASCENDING)]),
+            IndexModel([("countries", ASCENDING)])
         ]
