@@ -57,3 +57,4 @@ class Article(ArticleExtract):
     event_id: Optional[str] = None
     groups_mentioned_ids: List[str]
     artists_mentioned_ids: List[str]
+    url: Optional[str] = None
