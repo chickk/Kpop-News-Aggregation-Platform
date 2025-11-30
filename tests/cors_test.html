@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CORS GET Test (Local Server)</title>
+</head>
+<body>
+    <h1>CORS GET Test (Simulated frontend)</h1>
+    <p>From the source <strong>http://localhost:8000</strong> Request backend <strong>http://127.0.0.1:5001</strong></p>
+    <button onclick="testCORS()">Send GET request</button>
+    <div id="result">Awaiting testing...</div>
+
+    <script>
+        function testCORS() {
+            const endpoint = 'http://127.0.0.1:5001/api/content/latest';
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerText = 'Sending a request to ' + endpoint + '...';
+
+            fetch(endpoint)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error: ${response.status} ${response.statusText}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    resultDiv.style.color = 'green';
+                    resultDiv.innerText = 'Request successful! The front-end has retrieved the data. \nData Example: ' + JSON.stringify(data, null, 2).substring(0, 500) + '...';
+                    console.log("Success:", data);
+                })
+                .catch(error => {
+                    resultDiv.style.color = 'red';
+                    // Check the console for errors; this is where the CORS error truly occurs.
+                    resultDiv.innerText = 'Request failed: ' + error.message + '\nPlease check your browser console for a "CORS policy" error.';
+                });
+        }
+    </script>
+</body>
+</html>
