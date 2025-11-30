@@ -1,6 +1,7 @@
+from dataclasses import dataclass, field
 from typing import List, Optional
 
-from app.interfaces.nlp_module import iNLPModule
+from app.interfaces.nlp_module import ArticlePipelineResult, iNLPModule
 from app.interfaces.repositories import IArtistRepository, IGroupRepository
 from app.models.articles import Article, RawArticle
 from app.models.artists import Artist
@@ -57,109 +58,143 @@ class NLPModule(iNLPModule):
         return cls._event_extractor
 
     @staticmethod
-    def create_artist(name: str, group_membership: List[str] = []) -> Artist:
+    async def create_artist(name: str, group_membership: List[str] = []) -> Artist:
         """Generate an Artist object using their name and a list of groups they're apart of"""
-        artist_input = ArtistInput(artist_name=name, artist_groups=group_membership)
+        from app.pipeline.llm_modules.signatures import ArtistInput
+
+        # Create ArtistInput object
+        artist_input = ArtistInput(
+            artist_name=name,
+            artist_groups=group_membership
+        )
+
         extractor = NLPModule._get_artist_extractor()
-        results = extractor.forward(artist_input=artist_input)
-        return results.artist_output
+        results = await extractor.aforward(artist=artist_input)
+        artist_generated = results.artist_output
+
+        # Combine generated fields with artist name to create full Artist
+        artist = Artist(
+            **artist_generated.model_dump(),
+            name=name,
+            group_ids=[],
+        )
+        return artist
 
     @staticmethod
-    def create_group(name: str, group_members: List[str] = []) -> Group:
+    async def create_group(name: str, group_members: List[str] = []) -> Group:
         """Create a group using names and member artists"""
         group_input = GroupInput(group_name=name, artists_in_group=group_members)
         extractor = NLPModule._get_group_extractor()
-        results = extractor.forward(group_input=group_input)
-        return results.group_output
+        results = await extractor.aforward(group=group_input)
+        group_generated = results.group_output
+
+        # Combine generated fields with group name to create full Group
+        group = Group(
+            **group_generated.model_dump(),
+            name=name,
+            artist_ids=[],  # Will be populated when artists are saved
+        )
+        return group
 
     @staticmethod
-    def create_event(articles: List[Article], events: List[Event] = []) -> Event:
+    async def create_event(articles: List[Article], events: List[Event] = []) -> Event:
         """Create an event using a list of articles or events, or both"""
         extractor = NLPModule._get_event_extractor()
-        results = extractor.forward(articles=articles, events=events)
+        results = await extractor.aforward(articles=articles, events=events)
         return results.event_output
 
     @staticmethod
     async def create_article(raw_article: RawArticle) -> Article:
         """Create an article using the response fields from the news aggregator"""
         article_input = ArticleInput(
-            article_title=raw_article.title, article_text=raw_article.content
+            article_title=raw_article.title, article_text=raw_article.text
         )
         extractor = NLPModule._get_article_extractor()
-        results = extractor.forward(article_input=article_input)
-        article = results.article_output
-        if isinstance(article, Article):
-            return article
+        results = await extractor.aforward(article_input=article_input)
+        article_extract = results.article_output
+
+        # Combine extracted NLP fields with raw article data to create full Article
+        article = Article(
+            # Fields from ArticleExtract
+            summary=article_extract.summary,
+            sentiment=article_extract.sentiment,
+            artists_mentioned=article_extract.artists_mentioned,
+            groups_mentioned=article_extract.groups_mentioned,
+            tags=article_extract.tags,
+            countries=article_extract.countries,
+            # Fields from RawArticle
+            title=raw_article.title,
+            author=raw_article.author,
+            source_id="",  # Will be set when source is saved
+            publication_date=raw_article.publication_date,
+            text=raw_article.text,
+            images=raw_article.image_urls,
+            video=raw_article.video_url,
+            language=raw_article.language or "en",
+            url=raw_article.url,
+            # ID fields (initially empty)
+            groups_mentioned_ids=[],
+            artists_mentioned_ids=[],
+        )
+        return article
 
     @staticmethod
-    def create_source(raw_source: RawSource) -> Source:
+    async def create_source(raw_source: RawSource) -> Source:
         """Create a source using the response fields from the news aggregator"""
+        from app.models.sources import SourceInput
+
+        # Convert RawSource to SourceInput
+        source_input = SourceInput(
+            title=raw_source.title,
+            description=raw_source.description,
+            language=None,  # RawSource doesn't have language, LLM will infer it
+            country_code=raw_source.country_code
+        )
+
         extractor = NLPModule._get_source_extractor()
-        results = extractor.forward(source_input=raw_source)
+        results = await extractor.aforward(source=source_input)
         return results.source_output
 
     @staticmethod
-    async def create_all_from_article(raw_article: RawArticle) -> List:
+    async def generate_all_from_article(
+        raw_article: RawArticle,
+    ) -> ArticlePipelineResult:
         """
-        Given an article from news aggregator, create an article,
-        and where appropriate create artists, groups, events and sources
+        Generate all objects from article saving to database.
+
+        Returns:
+            ArticlePipelineResult containing article, source, and lists of new artists/groups
         """
-        results = []
         article = await NLPModule.create_article(raw_article)
-        results.append({"article": article})
 
-        if hasattr(raw_article, "source") and raw_article.source:
-            source = NLPModule.create_source(raw_article.source)
-        else:
-            source = None
+        source = None
+        if hasattr(raw_article, "raw_source") and raw_article.raw_source:
+            source = await NLPModule.create_source(raw_article.raw_source)
 
-        results.append({"source": source})
+        new_artists = []
+        new_groups = []
+        group_name_set = set()
 
-        artists_mentioned = article.artists_mentioned
-        groups_mentioned = article.groups_mentioned
+        for group_name in article.groups_mentioned:
+            if group_name not in group_name_set:
+                group = await NLPModule.create_group(name=group_name)
+                new_groups.append(group)
+                group_name_set.add(group_name)
 
-        artist_db = IArtistRepository()
-        group_db = IGroupRepository()
-        created_groups = []
-        for group_name in groups_mentioned:
-            group_store = await group_db.get_by_name(group_name)
-            if not group_store:
-                group = NLPModule.create_group(name=group_name)
-                group_store = await group_db.create(group)
-                created_groups.append(group_store)
+        for artist_name in article.artists_mentioned:
+            artist = await NLPModule.create_artist(name=artist_name)
+            new_artists.append(artist)
 
-            article.group_mentioned_ids.append(group_store._id)
-        i = 0
-        for group in created_groups:
-            results.append({f"group_{i}": group})
-            i += 1
+            if artist.in_groups and hasattr(artist, "group_names"):
+                for group_name in artist.group_names:
+                    if group_name not in group_name_set:
+                        group = await NLPModule.create_group(name=group_name)
+                        new_groups.append(group)
+                        group_name_set.add(group_name)
 
-        created_artists = []
-        created_groups = []
-
-        for artist_name in artists_mentioned:
-            artist_store = await artist_db.get_by_name(artist_name)
-            if not artist_store:
-                artist = NLPModule.create_artist(name=artist_name)
-                artist_store = await artist_db.create(artist)
-                created_artists.append(artist_store)
-            article.artist_mentioned_ids.append(artist_store._id)
-            if artist_store.in_groups:
-                for group_name in artist_store.group_names:
-                    group_store = await group_db.get_by_name(group_name)
-                    if not group_store:
-                        group = NLPModule.create_group(name=group_name)
-                        group_store = await group_db.create(group)
-                        created_groups.append(group_store)
-
-                    if group_store._id not in artist_store.group_ids:
-                        artist_store.group_ids.append(group_store._id)
-                await artist_db.update(artist_store._id, artist_store)
-        j = 0
-        for artist in created_artists:
-            results.append({f"artist_{j}": artist})
-            j += 1
-        for group in created_groups:
-            results.append({f"group_{i}": group})
-            i += 1
-        return results
+        return ArticlePipelineResult(
+            article=article,
+            source=source,
+            new_artists=new_artists,
+            new_groups=new_groups,
+        )

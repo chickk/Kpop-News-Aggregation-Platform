@@ -26,13 +26,10 @@ class ArtistExtractor(Module):
     def __init__(self):
         self.artist_extractor = ChainOfThought(ArtistPageExtractSignature)
 
-    async def aforward(self, artist_name: str, artist_groups: List[str], k: int = 5):
+    async def aforward(self, artist: ArtistInput):
         try:
-            # We should add a tool that grabs wikipedia articles or a rag or tsomething to add context for bios
-            artist_input = ArtistInput(
-                artist_name=artist_name, artist_groups=artist_groups
-            )
-            return await self.artist_extractor.acall(artist_input=artist_input)
+            # We should add a tool that grabs wikipedia articles or a rag or something to add context for bios
+            return await self.artist_extractor.acall(artist=artist)
 
         except Exception as e:
             raise Exception(f"Error during artist extraction: {str(e)}")
@@ -48,9 +45,9 @@ class ArticleExtractor(Module):
     def __init__(self):
         self.extractor = ChainOfThought(ArticleExtractSignature)
 
-    async def aforward(self, article: ArticleInput):
+    async def aforward(self, article_input: ArticleInput):
         try:
-            return await self.extractor.acall(article_input=article)
+            return await self.extractor.acall(article_input=article_input)
 
         except Exception as e:
             raise Exception(f"Error during article extraction: {str(e)}")
@@ -67,7 +64,7 @@ class GroupExtractor(Module):
 
     async def aforward(self, group: GroupInput):
         try:
-            return await self.extractor.acall(group_input=group)
+            return await self.extractor.acall(group=group)
 
         except Exception as e:
             raise Exception(f"Error during group extraction: {str(e)}")
@@ -84,7 +81,7 @@ class SourceExtractor(Module):
 
     async def aforward(self, source: SourceInput):
         try:
-            return await self.extractor.acall(source_input=source)
+            return await self.extractor.acall(source=source)
 
         except Exception as e:
             raise Exception(f"Error during source generation: {str(e)}")

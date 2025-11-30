@@ -23,10 +23,12 @@ class GroupGenerated(BaseModel):
     )
 
     language: List[str] = Field(
+        default_factory=list,
         description="List of languages that this band performs in. List all languages if multi lingual"
     )
 
     countries: List[str] = Field(
+        default_factory=list,
         description="List of countries this group is from. Include all if multiple"
     )
     tags: List[str] = Field(
@@ -40,4 +42,4 @@ class GroupGenerated(BaseModel):
 
 class Group(GroupGenerated):
     name: str
-    artist_ids: List[str]
+    artist_ids: List[str] = Field(default_factory=list)

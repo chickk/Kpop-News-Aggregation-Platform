@@ -21,10 +21,10 @@ class EventExtraction(BaseModel):
 
 
 class Event(EventExtraction):
-    article_ids: List[str]
-    article_count: int = 0
-    artist_ids: List[str]
-    group_ids: List[str]
-    tags: List[str]
-    countries: List[str]
-    avg_sentiment: float
+    article_ids: List[str] = Field(default_factory=list)
+    article_count: int = Field(default=0)
+    artist_ids: List[str] = Field(default_factory=list)
+    group_ids: List[str] = Field(default_factory=list)
+    tags: List[str] = Field(default_factory=list)
+    countries: List[str] = Field(default_factory=list)
+    avg_sentiment: float = Field(default=0.5)

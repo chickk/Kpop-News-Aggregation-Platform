@@ -49,6 +49,10 @@ class NewsAPIAggregator(INewsAggregator):
                 if concept_uris
                 else []
             )
+            if not queries:
+                print(
+                    f"  WARNING: No concept URIs found! Try using concepts=False for keyword search."
+                )
         else:
             queries = (
                 [BaseQuery(keyword=term) for term in query_terms] if query_terms else []
@@ -173,8 +177,8 @@ if __name__ == "__main__":
         articles = await news_agg.fetch_articles(
             query_terms=["K-Pop"],
             concepts=True,
-            start_date=datetime(2025, 11, 1),
-            end_date=datetime(2025, 11, 7),
+            start_date=datetime(2025, 11, 22),
+            end_date=datetime(2025, 11, 29),
             max_results=25,
         )
 
