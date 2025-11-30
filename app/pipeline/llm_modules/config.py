@@ -1,12 +1,11 @@
-import dspy
-from dspy import LM, ColBERTv2
+from dspy import LM
 
 
 def setup_dspy(
     model: str = "openai/gpt-4o-mini",
     api_key: str = None,
     max_tokens: int = 8000,
-    temperature: float = 0.1,
+    temperature: float = 0.7,
 ) -> LM:
     """Creates and returns a DSPy language model without configuring global settings.
 

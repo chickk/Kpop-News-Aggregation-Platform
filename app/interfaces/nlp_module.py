@@ -1,11 +1,22 @@
 from abc import ABC, abstractmethod
-from typing import List
+from dataclasses import dataclass, field
+from typing import List, Optional
 
 from app.models.articles import Article, RawArticle
 from app.models.artists import Artist
 from app.models.groups import Group
 from app.models.events import Event
 from app.models.sources import RawSource, Source
+
+
+@dataclass
+class ArticlePipelineResult:
+    """Result of article processing pipeline containing all generated objects"""
+
+    article: Article
+    source: Optional[Source]
+    new_artists: List[Artist] = field(default_factory=list)
+    new_groups: List[Group] = field(default_factory=list)
 
 
 class iNLPModule(ABC):
@@ -43,7 +54,7 @@ class iNLPModule(ABC):
 
     @staticmethod
     @abstractmethod
-    def create_all_from_article(raw_article: RawArticle) -> List:
+    def generate_all_from_article(raw_article: RawArticle) -> ArticlePipelineResult:
         """
         Given an article from news aggregator, create an article,
         and where appropriate create artists, groups, events and sources

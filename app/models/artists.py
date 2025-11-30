@@ -10,7 +10,7 @@ class ArtistGenerated(BaseModel):
 
     bio: str = Field(
         ...,
-        description="One to two paragraph description of the artist. It should read like a wikipedia article or a spotify bio",
+        description="One to two paragraph description of the artist. It should read like a wikipedia article or a spotify bio and include information on groups they're in.",
     )
     career_start: date = Field(
         description="Year that the artist became active, if unknown use the date of their first album"
@@ -32,9 +32,12 @@ class ArtistGenerated(BaseModel):
         description="List of any groups or bands this artist has ever been a part of.",
     )
 
-    language: str = Field(description="Primary language this artist performs in.")
+    language: str = Field(
+        default="en", description="Primary language this artist performs in."
+    )
     countries: List[str] = Field(
-        description="List of countries this artist is from or lives in. Justin Bieber -> ['canada', 'united states of america']"
+        default_factory=list,
+        description="List of countries this artist is from or lives in. Justin Bieber -> ['canada', 'united states of america']",
     )
     tags: List[str] = Field(
         default_factory=list, description="List of tags associated with the artist"
@@ -47,4 +50,4 @@ class Artist(ArtistGenerated):
     """
 
     name: str
-    group_ids: List[str]
+    group_ids: List[str] = Field(default_factory=list)

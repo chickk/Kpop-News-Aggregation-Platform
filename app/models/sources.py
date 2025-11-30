@@ -38,8 +38,8 @@ class Source(BaseModel):
     formed: Optional[date] = Field(
         default=None, description="When was the publication founded? if known"
     )
-    language: str = Field(description="What is the primary language of the publication")
+    language: str = Field(default="en", description="What is the primary language of the publication")
     countries: List[str] = Field(
-        description="List of countries the publciation is active in"
+        default_factory=list, description="List of countries the publciation is active in"
     )
-    tags: List[str]
+    tags: List[str] = Field(default_factory=list)

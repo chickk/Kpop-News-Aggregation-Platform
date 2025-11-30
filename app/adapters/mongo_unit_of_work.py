@@ -36,7 +36,7 @@ class MongoUnitOfWork(IUnitOfWork):
         self.groups: IGroupRepository
         self.events: IEventRepository
         self.sources: ISourceRepository
-        #self.raw_articles: IRawArticleRepository
+        self.raw_articles: IRawArticleRepository
 
     async def __aenter__(self):
         """Enter the context manager and start a transaction session."""
@@ -44,7 +44,7 @@ class MongoUnitOfWork(IUnitOfWork):
         
         if self.use_transaction:
             try:
-                self.session.start_transaction()
+                await self.session.start_transaction()
                 self._transaction_started = True
             except Exception as e:
                 print(f"Warning: Could not start transaction (expected in standalone mode). Running without it. Error: {e}")
@@ -56,8 +56,7 @@ class MongoUnitOfWork(IUnitOfWork):
         self.groups = MongoGroupRepository(session=self.session)
         self.events = MongoEventRepository(session=self.session)
         self.sources = MongoSourceRepository(session=self.session)
-        # Initialize raw_articles
-        #self.raw_articles = MongoRawArticleRepository(session=self.session)
+        self.raw_articles = MongoRawArticleRepository(session=self.session)
         
         return self
     

@@ -16,7 +16,7 @@ class RawArticle(BaseModel):
     author: Optional[str] = None
     publication_date: Optional[datetime] = None
     raw_source: RawSource
-    language: Optional[str] = None
+    language: Optional[str] = "en"
     processed: bool = False
     image_urls: List[str] = []
     video_url: Optional[str] = None
@@ -52,9 +52,9 @@ class Article(ArticleExtract):
     text: str
     images: List[str] = Field(default_factory=list)
     video: Optional[str] = None
-    language: str
+    language: str = Field(default="en")
     in_event: bool = Field(default=False)
     event_id: Optional[str] = None
-    groups_mentioned_ids: List[str]
-    artists_mentioned_ids: List[str]
+    groups_mentioned_ids: List[str] = Field(default_factory=list)
+    artists_mentioned_ids: List[str] = Field(default_factory=list)
     url: Optional[str] = None
