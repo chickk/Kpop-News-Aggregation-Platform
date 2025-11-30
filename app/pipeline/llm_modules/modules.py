@@ -45,9 +45,9 @@ class ArticleExtractor(Module):
     def __init__(self):
         self.extractor = ChainOfThought(ArticleExtractSignature)
 
-    async def aforward(self, article_input: ArticleInput):
+    async def aforward(self, article: ArticleInput):
         try:
-            return await self.extractor.acall(article_input=article_input)
+            return await self.extractor.acall(article=article)
 
         except Exception as e:
             raise Exception(f"Error during article extraction: {str(e)}")

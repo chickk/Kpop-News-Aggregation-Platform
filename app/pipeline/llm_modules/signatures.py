@@ -30,14 +30,23 @@ class GroupInput(BaseModel):
 # Signatures
 class ArticleExtractSignature(Signature):
     """
-    Params:
-        article_input
+    Extract information from a news article.
 
-        article_output
+    For the given article, extract:
+    - Summary (concise 1-2 sentence summary)
+    - Sentiment (0.0 = very negative, 1.0 = very positive)
+    - Artists mentioned
+    - Groups mentioned
+    - Relevant tags
+    - Countries mentioned
+
+    Params:
+        article: ArticleInput with title and text
+        article_output: Extracted article information
     """
 
-    article_input: ArticleInput = InputField()
-    article_output: ArticleExtract = OutputField()
+    article: ArticleInput = InputField(desc="Article title and text to analyze")
+    article_output: ArticleExtract = OutputField(desc="Extracted article information")
 
 
 class ArtistPageExtractSignature(Signature):
@@ -56,7 +65,9 @@ class ArtistPageExtractSignature(Signature):
     """
 
     artist: ArtistInput = InputField(desc="Artist name and their group memberships")
-    artist_output: ArtistGenerated = OutputField(desc="Generated artist information with unique biography")
+    artist_output: ArtistGenerated = OutputField(
+        desc="Generated artist information with unique biography"
+    )
 
 
 class GroupExtractSignature(Signature):
@@ -75,7 +86,9 @@ class GroupExtractSignature(Signature):
     """
 
     group: GroupInput = InputField(desc="Group name and member names")
-    group_output: GroupGenerated = OutputField(desc="Generated group information with unique biography")
+    group_output: GroupGenerated = OutputField(
+        desc="Generated group information with unique biography"
+    )
 
 
 class SourceExtractSignature(Signature):

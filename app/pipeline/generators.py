@@ -63,10 +63,7 @@ class NLPModule(iNLPModule):
         from app.pipeline.llm_modules.signatures import ArtistInput
 
         # Create ArtistInput object
-        artist_input = ArtistInput(
-            artist_name=name,
-            artist_groups=group_membership
-        )
+        artist_input = ArtistInput(artist_name=name, artist_groups=group_membership)
 
         extractor = NLPModule._get_artist_extractor()
         results = await extractor.aforward(artist=artist_input)
@@ -106,11 +103,11 @@ class NLPModule(iNLPModule):
     @staticmethod
     async def create_article(raw_article: RawArticle) -> Article:
         """Create an article using the response fields from the news aggregator"""
-        article_input = ArticleInput(
+        article = ArticleInput(
             article_title=raw_article.title, article_text=raw_article.text
         )
         extractor = NLPModule._get_article_extractor()
-        results = await extractor.aforward(article_input=article_input)
+        results = await extractor.aforward(article=article)
         article_extract = results.article_output
 
         # Combine extracted NLP fields with raw article data to create full Article
@@ -148,7 +145,7 @@ class NLPModule(iNLPModule):
             title=raw_source.title,
             description=raw_source.description,
             language=None,  # RawSource doesn't have language, LLM will infer it
-            country_code=raw_source.country_code
+            country_code=raw_source.country_code,
         )
 
         extractor = NLPModule._get_source_extractor()
