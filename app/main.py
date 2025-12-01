@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Request, Depends, HTTPException
 from fastapi.responses import HTMLResponse
+from fastapi.middleware.cors import CORSMiddleware
 from typing import List, AsyncGenerator 
 from contextlib import asynccontextmanager 
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -42,6 +43,22 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+origins = [
+    "http://localhost",
+    "http://localhost:5001", # Allow requests from the API itself
+    "http://127.0.0.1:5001",
+    "http://127.0.0.1:8080", # Assuming your front-end's default port is 8080
+    "*" # For testing purposes, all sources are temporarily allowed.
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,                      # List of allowed sources
+    allow_credentials=True,                     # Allow cookies/identity verification information to be sent on request.
+    allow_methods=["*"],                        # Allow all HTTP methods (GET, POST, PUT, DELETE, etc.)
+    allow_headers=["*"],                        # Allow all request headers
+)
+
 
 # --- Unit of Work Dependency Injection ---
 async def get_uow(request: Request) -> AsyncGenerator[IUnitOfWork, None]:
@@ -54,7 +71,7 @@ async def get_uow(request: Request) -> AsyncGenerator[IUnitOfWork, None]:
     if not db_client:
         raise HTTPException(status_code=500, detail="The database client has not yet been initialized.") 
         
-    use_transaction = request.method not in ["GET"]
+    use_transaction = False
     
     # Create Unit of Work
     uow = MongoUnitOfWork(db_client, use_transaction=use_transaction)

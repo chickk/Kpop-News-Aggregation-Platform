@@ -7,7 +7,7 @@ from app.data_layer.schemas import Article_db, Artist_db, Event_db, Group_db, So
 
 _client: AsyncIOMotorClient = None
 
-async def init_db(URI: str = None) -> AsyncIOMotorClient: # 函式現在返回 client
+async def init_db(URI: str = None) -> AsyncIOMotorClient:
     """
     Initializes the Beanie connection to the database.
     """
@@ -15,7 +15,6 @@ async def init_db(URI: str = None) -> AsyncIOMotorClient: # 函式現在返回 c
     if not URI:
         raise ValueError("URI environment variable is not set")
     
-    # 僅在 _client 為 None 時才建立連線
     if _client is None:
         _client = AsyncMongoClient(URI)
 
@@ -32,7 +31,7 @@ async def init_db(URI: str = None) -> AsyncIOMotorClient: # 函式現在返回 c
         )
         print("Database initialized successfully.")
     
-    return _client # 返回客戶端物件
+    return _client
 
 
 async def main():
