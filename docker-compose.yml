@@ -7,6 +7,8 @@ services:
       - ./app:/app/app
     environment:
       - MONGO_URI=mongodb://mongo:27017/idolTracker
+      - OPEN_AI_KEY=${OPEN_AI_KEY}
+      - NEWS_API_KEY=${NEWS_API_KEY}
     depends_on:
       - mongo
     restart: unless-stopped

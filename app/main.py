@@ -6,6 +6,8 @@ from contextlib import asynccontextmanager
 from motor.motor_asyncio import AsyncIOMotorClient
 from bson import ObjectId
 from datetime import datetime
+from pydantic import ValidationError
+from pymongo.errors import PyMongoError, DuplicateKeyError, ConnectionFailure
 import os
 
 from app.interfaces.query_params import (
@@ -94,8 +96,6 @@ async def get_uow(request: Request) -> AsyncGenerator[IUnitOfWork, None]:
 
 
 # --- API router ---
-
-
 @app.get("/")
 async def get_root():
     return {"Response": "Welcome To Idol Tracker"}
@@ -109,8 +109,12 @@ async def get_latest_content(uow: IUnitOfWork = Depends(get_uow)):
     try:
         articles_db = await uow.articles.get_all(limit=10)
         return articles_db
+    except ConnectionFailure as e:
+        raise HTTPException(status_code=503, detail="Database connection failed")
+    except PyMongoError as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
 
 @app.post("/api/content/test-article", response_model=Article, status_code=201)
@@ -142,10 +146,18 @@ async def create_test_article(article: Article, uow: IUnitOfWork = Depends(get_u
         created_article = await uow.articles.create(article_db)
 
         return created_article
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=f"Invalid date format: {str(e)}")
+    except ValidationError as e:
+        raise HTTPException(status_code=422, detail=f"Validation error: {str(e)}")
+    except DuplicateKeyError:
+        raise HTTPException(status_code=409, detail="Article already exists")
+    except ConnectionFailure:
+        raise HTTPException(status_code=503, detail="Database connection failed")
+    except PyMongoError as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
     except Exception as e:
-        raise HTTPException(
-            status_code=400, detail=f"Test article creation error: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
 
 @app.post("/api/events/merge", response_model=Event, status_code=201)
@@ -157,8 +169,16 @@ async def merge_articles_to_event(event: Event, uow: IUnitOfWork = Depends(get_u
         event_db = Event_db(**event.model_dump())
         created_event = await uow.events.create(event_db)
         return created_event
+    except ValidationError as e:
+        raise HTTPException(status_code=422, detail=f"Validation error: {str(e)}")
+    except DuplicateKeyError:
+        raise HTTPException(status_code=409, detail="Event already exists")
+    except ConnectionFailure:
+        raise HTTPException(status_code=503, detail="Database connection failed")
+    except PyMongoError as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Event creation error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
 
 @app.get("/api/content", response_model=List[Article])
@@ -207,8 +227,32 @@ async def list_content(
         )
 
         return articles_db
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=f"Invalid filter parameters: {str(e)}")
+    except ConnectionFailure:
+        raise HTTPException(status_code=503, detail="Database connection failed")
+    except PyMongoError as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
+
+
+@app.get("/api/content/{id}", response_model=Article)
+async def get_article(id: str, uow: IUnitOfWork = Depends(get_uow)):
+    """Gets article by id"""
+    try:
+        article = await uow.articles.get_by_id(id=id)
+        if article is None:
+            raise HTTPException(status_code=404, detail=f"Article with id '{id}' not found")
+        return article
+    except HTTPException:
+        raise
+    except ConnectionFailure:
+        raise HTTPException(status_code=503, detail="Database connection failed")
+    except PyMongoError as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
 
 @app.get("/api/artists", response_model=List[Artist])
@@ -242,8 +286,32 @@ async def list_artists(
         )
 
         return artists_db
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=f"Invalid filter parameters: {str(e)}")
+    except ConnectionFailure:
+        raise HTTPException(status_code=503, detail="Database connection failed")
+    except PyMongoError as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
+
+
+@app.get("/api/artists/{id}", response_model=Artist)
+async def get_artist(id: str, uow: IUnitOfWork = Depends(get_uow)):
+    """Gets artist by id"""
+    try:
+        artist = await uow.artists.get_by_id(id=id)
+        if artist is None:
+            raise HTTPException(status_code=404, detail=f"Artist with id '{id}' not found")
+        return artist
+    except HTTPException:
+        raise
+    except ConnectionFailure:
+        raise HTTPException(status_code=503, detail="Database connection failed")
+    except PyMongoError as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
 
 @app.get("/api/groups", response_model=List[Group])
@@ -277,8 +345,32 @@ async def list_groups(
         )
 
         return groups_db
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=f"Invalid filter parameters: {str(e)}")
+    except ConnectionFailure:
+        raise HTTPException(status_code=503, detail="Database connection failed")
+    except PyMongoError as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
+
+
+@app.get("/api/group/{id}", response_model=Group)
+async def get_group(id: str, uow: IUnitOfWork = Depends(get_uow)):
+    """Gets group by id"""
+    try:
+        group = await uow.groups.get_by_id(id=id)
+        if group is None:
+            raise HTTPException(status_code=404, detail=f"Group with id '{id}' not found")
+        return group
+    except HTTPException:
+        raise
+    except ConnectionFailure:
+        raise HTTPException(status_code=503, detail="Database connection failed")
+    except PyMongoError as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
 
 @app.get("/api/sources", response_model=List[Source])
@@ -309,5 +401,29 @@ async def list_sources(
         )
 
         return sources_db
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=f"Invalid filter parameters: {str(e)}")
+    except ConnectionFailure:
+        raise HTTPException(status_code=503, detail="Database connection failed")
+    except PyMongoError as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
+
+
+@app.get("/api/source/{id}", response_model=Source)
+async def get_source(id: str, uow: IUnitOfWork = Depends(get_uow)):
+    """Gets source by id"""
+    try:
+        source = await uow.sources.get_by_id(id=id)
+        if source is None:
+            raise HTTPException(status_code=404, detail=f"Source with id '{id}' not found")
+        return source
+    except HTTPException:
+        raise
+    except ConnectionFailure:
+        raise HTTPException(status_code=503, detail="Database connection failed")
+    except PyMongoError as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
