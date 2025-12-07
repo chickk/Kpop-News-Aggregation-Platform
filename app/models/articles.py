@@ -40,7 +40,8 @@ class ArticleExtract(BaseModel):
         description="List of potential tags for the article", default_factory=list
     )
     countries: List[str] = Field(
-        description="List of countries referenced in the article", default_factory=list
+        description="List of countries referenced in the article, three letter ISO code",
+        default_factory=list,
     )
 
 

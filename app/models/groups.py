@@ -24,12 +24,12 @@ class GroupGenerated(BaseModel):
 
     language: List[str] = Field(
         default_factory=list,
-        description="List of languages that this band performs in. List all languages if multi lingual"
+        description="List of languages that this band performs in. List all languages if multi lingual",
     )
 
     countries: List[str] = Field(
         default_factory=list,
-        description="List of countries this group is from. Include all if multiple"
+        description="List of countries this group is from. Include all if multiple,  three letter ISO code",
     )
     tags: List[str] = Field(
         default_factory=list, description="List of tags associated with the group"

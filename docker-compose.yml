@@ -1,16 +1,16 @@
 services:
-  # backend:
-  #   build: .
-  #   ports:
-  #     - "8000:8000"
-  #   volumes:
-  #     - ./app:/code/app
-  #   environment:
-  #     - MONGO_URI=mongodb://admin:${MONGO_ROOT_PASSWORD}@mongo:27017/idolTracker?authSource=admin
-  #     - OPENAI_API_KEY=${OPENAI_API_KEY}
-  #     - FRONTEND_PORT=${FRONTEND_PORT}
-  #   depends_on:
-  #     - mongo
+  backend:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./app:/app/app
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/idolTracker
+    depends_on:
+      - mongo
+    restart: unless-stopped
+
   mongo:
     image: mongodb/mongodb-community-server:latest
     ports:
