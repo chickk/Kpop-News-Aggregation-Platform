@@ -16,6 +16,14 @@ from app.interfaces.query_params import (
     GroupFilters,
     SourceFilters,
 )
+from app.interfaces.pipeline_requests import (
+    FetchArticlesRequest,
+    FetchArticlesResponse,
+    ProcessArticlesRequest,
+    ProcessArticlesResponse,
+    RunFullPipelineRequest,
+    FullPipelineResponse,
+)
 from app.models.articles import Article
 from app.models.artists import Artist
 from app.models.events import Event
@@ -27,6 +35,10 @@ from app.data_layer.schemas import Event_db, Article_db
 from app.interfaces.unit_of_work import IUnitOfWork
 from app.adapters.mongo_unit_of_work import MongoUnitOfWork
 from app.data_layer.mongo_database import init_db
+from app.pipeline.pipeline import PipelineOrchestrator
+from app.pipeline.llm_modules.config import setup_dspy
+from app.news_aggregators.news_api import NewsAPIAggregator
+import dspy
 
 
 # --- Lifespan Manager ---
@@ -40,6 +52,24 @@ async def lifespan(app: FastAPI):
 
     # Store the client in app.state so that it can be used in requests.
     app.state.db_client = db_client
+
+    # Initialize DSPy for pipeline
+    print("Initializing DSPy for pipeline...")
+    openai_key = os.getenv("OPEN_AI_KEY")
+    if openai_key:
+        lm = setup_dspy(api_key=openai_key)
+        dspy.configure(lm=lm)
+        print("DSPy configured successfully")
+    else:
+        print("Warning: OPEN_AI_KEY not found. Pipeline endpoints will not work.")
+
+    # Initialize News Aggregator
+    news_api_key = os.getenv("NEWS_API_KEY")
+    if news_api_key:
+        app.state.news_aggregator = NewsAPIAggregator(apiKey=news_api_key)
+        print("News aggregator initialized")
+    else:
+        print("Warning: NEWS_API_KEY not found. Pipeline endpoints will not work.")
 
     yield
 
@@ -93,6 +123,28 @@ async def get_uow(request: Request) -> AsyncGenerator[IUnitOfWork, None]:
 
     async with uow:
         yield uow
+
+
+# --- Pipeline Orchestrator Dependency Injection ---
+def get_pipeline_orchestrator(request: Request) -> PipelineOrchestrator:
+    """
+    Get the pipeline orchestrator with news aggregator and database client.
+    """
+    db_client: AsyncIOMotorClient = getattr(request.app.state, "db_client", None)
+    news_aggregator = getattr(request.app.state, "news_aggregator", None)
+
+    if not db_client:
+        raise HTTPException(
+            status_code=500, detail="the database client has not yet been initialized."
+        )
+
+    if not news_aggregator:
+        raise HTTPException(
+            status_code=500,
+            detail="The news aggregator has not been initialized. Check NEWS_API_KEY environment variable.",
+        )
+
+    return PipelineOrchestrator(news_aggregator=news_aggregator, db_client=db_client)
 
 
 # --- API router ---
@@ -228,7 +280,9 @@ async def list_content(
 
         return articles_db
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=f"Invalid filter parameters: {str(e)}")
+        raise HTTPException(
+            status_code=400, detail=f"Invalid filter parameters: {str(e)}"
+        )
     except ConnectionFailure:
         raise HTTPException(status_code=503, detail="Database connection failed")
     except PyMongoError as e:
@@ -243,7 +297,9 @@ async def get_article(id: str, uow: IUnitOfWork = Depends(get_uow)):
     try:
         article = await uow.articles.get_by_id(id=id)
         if article is None:
-            raise HTTPException(status_code=404, detail=f"Article with id '{id}' not found")
+            raise HTTPException(
+                status_code=404, detail=f"Article with id '{id}' not found"
+            )
         return article
     except HTTPException:
         raise
@@ -287,7 +343,9 @@ async def list_artists(
 
         return artists_db
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=f"Invalid filter parameters: {str(e)}")
+        raise HTTPException(
+            status_code=400, detail=f"Invalid filter parameters: {str(e)}"
+        )
     except ConnectionFailure:
         raise HTTPException(status_code=503, detail="Database connection failed")
     except PyMongoError as e:
@@ -302,7 +360,9 @@ async def get_artist(id: str, uow: IUnitOfWork = Depends(get_uow)):
     try:
         artist = await uow.artists.get_by_id(id=id)
         if artist is None:
-            raise HTTPException(status_code=404, detail=f"Artist with id '{id}' not found")
+            raise HTTPException(
+                status_code=404, detail=f"Artist with id '{id}' not found"
+            )
         return artist
     except HTTPException:
         raise
@@ -346,7 +406,9 @@ async def list_groups(
 
         return groups_db
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=f"Invalid filter parameters: {str(e)}")
+        raise HTTPException(
+            status_code=400, detail=f"Invalid filter parameters: {str(e)}"
+        )
     except ConnectionFailure:
         raise HTTPException(status_code=503, detail="Database connection failed")
     except PyMongoError as e:
@@ -361,7 +423,9 @@ async def get_group(id: str, uow: IUnitOfWork = Depends(get_uow)):
     try:
         group = await uow.groups.get_by_id(id=id)
         if group is None:
-            raise HTTPException(status_code=404, detail=f"Group with id '{id}' not found")
+            raise HTTPException(
+                status_code=404, detail=f"Group with id '{id}' not found"
+            )
         return group
     except HTTPException:
         raise
@@ -402,7 +466,9 @@ async def list_sources(
 
         return sources_db
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=f"Invalid filter parameters: {str(e)}")
+        raise HTTPException(
+            status_code=400, detail=f"Invalid filter parameters: {str(e)}"
+        )
     except ConnectionFailure:
         raise HTTPException(status_code=503, detail="Database connection failed")
     except PyMongoError as e:
@@ -417,7 +483,9 @@ async def get_source(id: str, uow: IUnitOfWork = Depends(get_uow)):
     try:
         source = await uow.sources.get_by_id(id=id)
         if source is None:
-            raise HTTPException(status_code=404, detail=f"Source with id '{id}' not found")
+            raise HTTPException(
+                status_code=404, detail=f"Source with id '{id}' not found"
+            )
         return source
     except HTTPException:
         raise
@@ -427,3 +495,126 @@ async def get_source(id: str, uow: IUnitOfWork = Depends(get_uow)):
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
+
+
+# --- Pipeline Endpoints ---
+
+
+@app.post("/api/pipeline/fetch", response_model=FetchArticlesResponse, status_code=202)
+async def fetch_articles(
+    request: FetchArticlesRequest,
+    orchestrator: PipelineOrchestrator = Depends(get_pipeline_orchestrator),
+):
+    """
+    Stage 1: Fetch articles from news sources and store them in the raw_articles collection.
+
+    This endpoint fetches articles based on query terms and stores them for later processing.
+    Articles are not processed through the NLP pipeline yet - use the process endpoint for that.
+    """
+    try:
+        stats = await orchestrator.fetch_and_store_articles(
+            query_terms=request.query_terms,
+            concepts=request.concepts,
+            start_date=request.start_date,
+            end_date=request.end_date,
+            language=request.language,
+            max_results=request.max_results,
+        )
+
+        return FetchArticlesResponse(
+            success=True,
+            message=f"Successfully fetched {stats['fetched']} articles, stored {stats['stored']} new articles",
+            fetched=stats["fetched"],
+            stored=stats["stored"],
+            duplicates=stats["duplicates"],
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=f"Invalid request parameters: {str(e)}")
+    except ConnectionFailure:
+        raise HTTPException(status_code=503, detail="Database connection failed")
+    except PyMongoError as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Pipeline error: {str(e)}")
+
+
+@app.post("/api/pipeline/process", response_model=ProcessArticlesResponse, status_code=202)
+async def process_articles(
+    request: ProcessArticlesRequest,
+    orchestrator: PipelineOrchestrator = Depends(get_pipeline_orchestrator),
+):
+    """
+    Stage 2: Process unprocessed articles through the NLP pipeline.
+
+    This endpoint takes articles from the raw_articles collection that haven't been processed yet
+    and runs them through the full NLP pipeline to extract entities, generate summaries, etc.
+    """
+    try:
+        stats = await orchestrator.process_unprocessed_articles(
+            batch_size=request.batch_size,
+            limit=request.limit,
+        )
+
+        return ProcessArticlesResponse(
+            success=True,
+            message=f"Successfully processed {stats['processed']} articles, {stats['failed']} failed",
+            processed=stats["processed"],
+            failed=stats["failed"],
+            failed_articles=stats.get("failed_articles", []),
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=f"Invalid request parameters: {str(e)}")
+    except ConnectionFailure:
+        raise HTTPException(status_code=503, detail="Database connection failed")
+    except PyMongoError as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Pipeline error: {str(e)}")
+
+
+@app.post("/api/pipeline/run", response_model=FullPipelineResponse, status_code=202)
+async def run_full_pipeline(
+    request: RunFullPipelineRequest,
+    orchestrator: PipelineOrchestrator = Depends(get_pipeline_orchestrator),
+):
+    """
+    Run the complete pipeline: fetch articles AND process them.
+
+    This is a convenience endpoint that combines both stages:
+    1. Fetch articles from news sources based on query terms
+    2. Process the fetched articles through the NLP pipeline
+
+    Use this for a complete end-to-end pipeline run.
+    """
+    try:
+        # Stage 1: Fetch articles
+        fetch_stats = await orchestrator.fetch_and_store_articles(
+            query_terms=request.query_terms,
+            concepts=request.concepts,
+            start_date=request.start_date,
+            end_date=request.end_date,
+            language=request.language,
+            max_results=request.max_results,
+        )
+
+        # Stage 2: Process articles
+        process_limit = request.process_limit or fetch_stats["stored"]
+        process_stats = await orchestrator.process_unprocessed_articles(
+            batch_size=request.batch_size,
+            limit=process_limit,
+        )
+
+        return FullPipelineResponse(
+            success=True,
+            message=f"Pipeline complete: fetched {fetch_stats['stored']} new articles, processed {process_stats['processed']} articles",
+            fetch_stats=fetch_stats,
+            process_stats=process_stats,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=f"Invalid request parameters: {str(e)}")
+    except ConnectionFailure:
+        raise HTTPException(status_code=503, detail="Database connection failed")
+    except PyMongoError as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Pipeline error: {str(e)}")

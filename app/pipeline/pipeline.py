@@ -3,6 +3,7 @@ import logging
 from datetime import datetime, timedelta
 from typing import List, Optional
 from motor.motor_asyncio import AsyncIOMotorClient
+from pymongo.errors import DuplicateKeyError
 
 from app.interfaces.nlp_module import ArticlePipelineResult
 from app.interfaces.news_aggregator import INewsAggregator
@@ -50,7 +51,16 @@ class Pipeline:
                 if existing_source:
                     saved_source = existing_source
                 else:
-                    saved_source = await uow.sources.create(results.source)
+                    try:
+                        saved_source = await uow.sources.create(results.source)
+                    except DuplicateKeyError:
+                        existing_source = await uow.sources.get_by_name(
+                            results.source.name
+                        )
+                        if existing_source:
+                            saved_source = existing_source
+                        else:
+                            raise
                 saved_results["source"] = saved_source
                 # Set source_id on article
                 results.article.source_id = str(saved_source.id)
@@ -153,6 +163,18 @@ class Pipeline:
         Returns:
             Dictionary containing saved database objects with their IDs
         """
+        # Check for duplicate content BEFORE running expensive NLP pipeline
+        async with MongoUnitOfWork(client, use_transaction=False) as uow:
+            if await uow.articles.exact_article_exists(raw_article.text):
+                logger.info(f"Skipping duplicate article: {raw_article.title[:50]}...")
+                return {
+                    "article": None,
+                    "source": None,
+                    "created_artists": [],
+                    "created_groups": [],
+                    "skipped": True,
+                }
+
         results = await NLPModule.generate_all_from_article(raw_article)
         return await Pipeline.save_pipeline_results(results, client)
 
@@ -311,8 +333,11 @@ class PipelineOrchestrator:
                             {"title": article.title, "error": str(result)}
                         )
                     else:
+                        # Check if article was skipped due to duplicate
+                        if isinstance(result, dict) and result.get("skipped"):
+                            logger.info(f"Marking skipped duplicate as processed: {article.title[:50]}...")
                         stats["processed"] += 1
-                        # Mark article as processed
+                        # Mark article as processed (whether created or skipped as duplicate)
                         await uow.raw_articles.mark_as_processed(str(article.id))
 
         logger.info(

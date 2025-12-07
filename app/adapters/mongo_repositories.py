@@ -1,3 +1,4 @@
+import hashlib
 from pymongo.client_session import ClientSession
 from typing import List, Optional
 from datetime import date, datetime
@@ -185,6 +186,11 @@ class MongoArticleRepository(BeanieRepository[Article_db], IArticleRepository):
         # Finds articles that have at least one of the tags in the list
         query = self.model.find(Article_db.tags.in_(tags), session=self.session)
         return await query.skip(skip).limit(limit).to_list()
+
+    async def exact_article_exists(self, article: str) -> bool:
+        hashed_text = hashlib.sha256(article.encode()).hexdigest()
+        result = await self.model.find_one(Article_db.article_hash == hashed_text)
+        return result is not None
 
 
 #

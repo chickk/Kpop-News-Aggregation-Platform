@@ -110,9 +110,8 @@ class Source_db(BaseDocument, Source):
     class Settings:
         name = "sources"
         indexes = [
-            IndexModel(
-                [("name", TEXT)], unique=True, default_language="none", language_override="dummy_field"
-            ),  # Source name should be unique
+            IndexModel([("name", ASCENDING)], unique=True),  # Exact match unique index
+            IndexModel([("name", TEXT)], default_language="none", language_override="dummy_field"),  # Text search index
             IndexModel([("language", ASCENDING)]),
             IndexModel([("countries", ASCENDING)]),
             IndexModel([("tags", ASCENDING)]),
