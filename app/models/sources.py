@@ -24,7 +24,7 @@ class SourceInput(BaseModel):
     )
     country_code: Optional[str] = Field(
         default=None,
-        description="Country code of primary location of source if available",
+        description="Three letter ISO code code of primary location of source if available",
     )
 
 
@@ -38,8 +38,11 @@ class Source(BaseModel):
     formed: Optional[date] = Field(
         default=None, description="When was the publication founded? if known"
     )
-    language: str = Field(default="en", description="What is the primary language of the publication")
+    language: str = Field(
+        default="en", description="What is the primary language of the publication"
+    )
     countries: List[str] = Field(
-        default_factory=list, description="List of countries the publciation is active in"
+        default_factory=list,
+        description="List of  three letter ISO code for countries the publiction is active in",
     )
     tags: List[str] = Field(default_factory=list)

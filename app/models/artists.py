@@ -37,7 +37,7 @@ class ArtistGenerated(BaseModel):
     )
     countries: List[str] = Field(
         default_factory=list,
-        description="List of countries this artist is from or lives in. Justin Bieber -> ['canada', 'united states of america']",
+        description="List of countries this artist is from or lives in. three letter ISO code Justin Bieber -> ['CAN', 'USA']",
     )
     tags: List[str] = Field(
         default_factory=list, description="List of tags associated with the artist"
