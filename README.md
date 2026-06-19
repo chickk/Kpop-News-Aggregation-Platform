@@ -191,21 +191,6 @@ python scripts/smoke_llm.py
 
 Before running the LLM smoke test, make sure `.env` contains `NLP_PROVIDER` and the matching API key.
 
-## Deployment
-
-The repository includes GitHub Actions workflows and AWS deployment examples:
-
-- Frontend: S3 + CloudFront
-- Backend: Docker image + ECR + EC2 Docker Compose
-
-See:
-
-```text
-docs/aws-deployment.md
-```
-
-The frontend workflow currently runs only the build step on push. AWS deployment steps run only when the workflow is triggered manually with `workflow_dispatch`, which prevents push builds from failing before AWS repository secrets and variables are configured.
-
 ## Security Notes
 
 - Do not commit `.env`, API keys, AWS credentials, or SSH keys.
