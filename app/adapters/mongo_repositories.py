@@ -247,9 +247,9 @@ class MongoGroupRepository(BeanieRepository[Group_db], IGroupRepository):
     ) -> List[Group]:
         filters = {}
         if start_date:
-            filters[Group_db.formed >= start_date]  # 假設欄位名為 formed
+            filters[Group_db.formed >= start_date]  # Assumes the field name is formed.
         if end_date:
-            filters[Group_db.disbanded <= end_date]  # 假設欄位名為 disbanded
+            filters[Group_db.disbanded <= end_date]  # Assumes the field name is disbanded.
 
         query = self.model.find(filters, session=self.session)
         return await query.skip(skip).limit(limit).to_list()

@@ -99,11 +99,10 @@ async def test_artist_repository_get_by_name(test_db):
     """
     Test: Verify that the specific method get_by_name in MongoArtistRepository works correctly.
     """
-    # (修復) 傳入 use_transaction=False
-    # 我們不在乎這個測試的交易，我們只想測試 get_by_name
+    # Pass use_transaction=False because this test only verifies get_by_name.
     uow = MongoUnitOfWork(client=test_db, use_transaction=False)
     
-    # 準備：先建立一筆資料並 commit
+    # Arrange: create and commit a test artist.
     new_artist_data = Artist(
         name="BLACKPINK",
         bio="Test bio for BLACKPINK",
@@ -113,29 +112,26 @@ async def test_artist_repository_get_by_name(test_db):
         countries=["South Korea"],
         group_ids=[]
     )
-    # (修復)
     new_artist_db = Artist_db(**new_artist_data.model_dump())
     
-    created_artist_id = None # 用於清理
+    created_artist_id = None # Used for cleanup.
     
     async with uow:
         created_artist = await uow.artists.create(new_artist_db)
-        created_artist_id = str(created_artist.id) # 儲存 ID
+        created_artist_id = str(created_artist.id) # Store the ID.
         
-    # 執行：
-    # 建立一個新的 UoW 來執行 get_by_name
+    # Act: create a new UoW to run get_by_name.
     found_artist = None
-    # (修復) 建立一個新的 UoW，同樣停用交易
+    # Disable transactions here as well.
     async with MongoUnitOfWork(client=test_db, use_transaction=False) as new_uow:
         found_artist = await new_uow.artists.get_by_name("BLACKPINK")
         
-    # 驗證：
+    # Assert.
     assert found_artist is not None
     assert found_artist.name == "BLACKPINK"
     assert found_artist.bio == "Test bio for BLACKPINK"
     
-    # 清理
-    # (修復) 使用一個新的 UoW 來執行刪除，確保 session 是
+    # Cleanup: use a new UoW to delete the test artist.
     assert created_artist_id is not None
     async with MongoUnitOfWork(client=test_db, use_transaction=False) as clean_uow:
         await clean_uow.artists.delete(created_artist_id)
