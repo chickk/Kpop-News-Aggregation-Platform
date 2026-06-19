@@ -1,8 +1,11 @@
 import asyncio
+import os
 import pytest
 from motor.motor_asyncio import AsyncIOMotorClient
 from beanie import init_beanie
 import pytest_asyncio
+
+os.environ.setdefault("DSPY_CACHEDIR", "/tmp/idoltracker_dspy_cache")
 
 # 
 # --- 1. Import all your DB Schemas (Models) ---
@@ -21,7 +24,7 @@ from app.data_layer.schemas import (
 # 
 # Use a *dedicated* test database, not your production "idolTracker" DB
 TEST_DB_NAME = "idolTracker_test" 
-TEST_URI = f"mongodb://localhost:27017/{TEST_DB_NAME}"
+TEST_URI = os.getenv("MONGO_TEST_URI", f"mongodb://localhost:27017/{TEST_DB_NAME}")
 
 # List all your Beanie models
 ALL_MODELS = [

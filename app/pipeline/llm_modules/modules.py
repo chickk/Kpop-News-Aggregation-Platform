@@ -1,5 +1,5 @@
 from typing import List
-from dspy import Module, ChainOfThought
+from dspy import Module, ChainOfThought, Predict
 from app.models.articles import Article
 from app.models.events import Event
 from app.models.sources import SourceInput
@@ -43,7 +43,7 @@ class ArticleExtractor(Module):
     """
 
     def __init__(self):
-        self.extractor = ChainOfThought(ArticleExtractSignature)
+        self.extractor = Predict(ArticleExtractSignature)
 
     async def aforward(self, article: ArticleInput):
         try:

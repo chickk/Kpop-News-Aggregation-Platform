@@ -34,7 +34,13 @@ class ArticleExtractSignature(Signature):
 
     For the given article, extract:
     - Summary (concise 1-2 sentence summary)
-    - Sentiment (0.0 = very negative, 1.0 = very positive)
+    - Sentiment (0.0 = very negative, 1.0 = very positive). Use the emotional
+      tone of the news for the subject. Do not default to 0.5. Health issues,
+      breakdowns, controversy, backlash, pain, cancellation, legal trouble, or
+      fan concern should usually be below 0.45. Reassurance, achievements,
+      comeback announcements, awards, appointments, and successful releases
+      should usually be above 0.55. Use exactly 0.5 only when the article is
+      genuinely neutral.
     - Artists mentioned
     - Groups mentioned
     - Relevant tags

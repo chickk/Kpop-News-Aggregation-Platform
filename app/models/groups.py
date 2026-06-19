@@ -1,5 +1,5 @@
-from datetime import date
-from typing import List, Optional
+from datetime import date, datetime
+from typing import Dict, List, Optional
 from pydantic import BaseModel, Field
 
 
@@ -43,3 +43,13 @@ class GroupGenerated(BaseModel):
 class Group(GroupGenerated):
     name: str
     artist_ids: List[str] = Field(default_factory=list)
+    canonical_name: Optional[str] = None
+    aliases: List[str] = Field(default_factory=list)
+    wikidata_id: Optional[str] = None
+    wikipedia_url: Optional[str] = None
+    image_url: Optional[str] = None
+    external_ids: Dict[str, str] = Field(default_factory=dict)
+    entity_confidence: Optional[float] = None
+    needs_review: bool = False
+    last_enriched_at: Optional[datetime] = None
+    entity_type: Optional[str] = None

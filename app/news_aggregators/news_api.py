@@ -29,6 +29,8 @@ class NewsAPIAggregator(INewsAggregator):
         end_date: datetime = None,
         language: Optional[str] = None,
         max_results: int = 100,
+        keyword_loc: str | List[str] = "body",
+        sort_by: str = "date",
     ) -> List[RawArticle]:
         """Fetch articles from EventRegistry based on query terms and concepts."""
 
@@ -54,8 +56,18 @@ class NewsAPIAggregator(INewsAggregator):
                     f"  WARNING: No concept URIs found! Try using concepts=False for keyword search."
                 )
         else:
+            keyword_locs = (
+                keyword_loc
+                if isinstance(keyword_loc, list)
+                else [keyword_loc for _ in query_terms]
+            )
             queries = (
-                [BaseQuery(keyword=term) for term in query_terms] if query_terms else []
+                [
+                    BaseQuery(keyword=term, keywordLoc=loc)
+                    for term, loc in zip(query_terms, keyword_locs)
+                ]
+                if query_terms
+                else []
             )
 
         search_queries = [CombinedQuery.OR(queries)]
@@ -67,7 +79,7 @@ class NewsAPIAggregator(INewsAggregator):
         q = QueryArticlesIter.initWithComplexQuery(cq)
 
         raw_articles = []
-        results = q.execQuery(self.api, sortBy="date", maxItems=max_results)
+        results = q.execQuery(self.api, sortBy=sort_by, maxItems=max_results)
         for article_data in results:
             raw_article = self._parse_article(article_data)
             if raw_article:
@@ -79,7 +91,7 @@ class NewsAPIAggregator(INewsAggregator):
         """Get concept URIs from concept names using EventRegistry."""
         uris = []
         for concept in concepts:
-            uri = self.api.getConceptUri(concept)
+            uri = concept if concept.startswith("http://") or concept.startswith("https://") else self.api.getConceptUri(concept)
             if uri:
                 uris.append(uri)
 

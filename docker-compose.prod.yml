@@ -1,13 +1,20 @@
 services:
-  backend:
-    build: .
+  nginx:
+    image: nginx:1.27-alpine
     ports:
-      - "8000:8000"
+      - "80:80"
     volumes:
-      - ./app:/app/app
+      - ./deploy/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+  backend:
+    image: ${BACKEND_IMAGE:?Set BACKEND_IMAGE to the ECR image URI}
     environment:
       - MONGO_URI=mongodb://mongo:27017/idolTracker
-      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:5173,http://127.0.0.1:5173,http://localhost:8080,http://127.0.0.1:8080}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-}
       - NLP_MODE=${NLP_MODE:-cheap}
       - NLP_PROVIDER=${NLP_PROVIDER:-groq}
       - LLM_MODEL=${LLM_MODEL:-}
@@ -20,30 +27,24 @@ services:
       - NEWS_AUTO_PROCESS_CONCURRENCY=${NEWS_AUTO_PROCESS_CONCURRENCY:-4}
       - NEWS_AUTO_FETCH_FALLBACK_DAYS=${NEWS_AUTO_FETCH_FALLBACK_DAYS:-30}
       - NEWS_AUTO_FETCH_LANGUAGE=${NEWS_AUTO_FETCH_LANGUAGE:-eng}
-      - WIKI_ENRICHMENT_ENABLED=${WIKI_ENRICHMENT_ENABLED:-false}
-      - WIKI_GROUP_MIN_CONFIDENCE=${WIKI_GROUP_MIN_CONFIDENCE:-0.65}
-      - WIKI_ARTIST_MIN_CONFIDENCE=${WIKI_ARTIST_MIN_CONFIDENCE:-0.65}
-      - WIKI_REQUEST_TIMEOUT_SECONDS=${WIKI_REQUEST_TIMEOUT_SECONDS:-4}
-      - WIKI_REQUEST_MIN_INTERVAL_SECONDS=${WIKI_REQUEST_MIN_INTERVAL_SECONDS:-0.5}
-      - WIKI_REQUEST_MAX_RETRIES=${WIKI_REQUEST_MAX_RETRIES:-3}
-      - WIKIMEDIA_USER_AGENT=${WIKIMEDIA_USER_AGENT:-}
       - OPEN_AI_KEY=${OPEN_AI_KEY:-}
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - GROQ_API_KEY=${GROQ_API_KEY:-}
       - NEWS_API_KEY=${NEWS_API_KEY:-}
     depends_on:
       - mongo
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health', timeout=2)"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
     restart: unless-stopped
 
   mongo:
     image: mongodb/mongodb-community-server:latest
-    ports:
-      - "27017:27017"
     volumes:
       - mongo-data:/data/db
-    # environment:
-    #   - MONGODB_INITDB_ROOT_USERNAME=admin
-    #   - MONGODB_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD}
     restart: unless-stopped
 
 volumes:

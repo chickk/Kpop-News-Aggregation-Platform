@@ -26,6 +26,8 @@ class INewsAggregator(ABC):
         end_date: datetime = None,
         language: Optional[str] = None,
         max_results: int = 100,
+        keyword_loc: str | List[str] = "body",
+        sort_by: str = "date",
     ) -> List[RawArticle]:
         """
         Fetch articles from the external source.
@@ -37,6 +39,9 @@ class INewsAggregator(ABC):
             end_date: Latest publication date to fetch
             language: Optional language filter (e.g., "en", "ko")
             max_results: Maximum number of articles to return
+            keyword_loc: Where keyword searches should match, such as "title" or "body".
+                Use a list to set one location per query term.
+            sort_by: External provider sort mode, such as "date" or "rel"
 
         Returns:
             List of raw articles from the source
