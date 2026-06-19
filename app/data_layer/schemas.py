@@ -107,10 +107,23 @@ class Artist_db(BaseDocument, Artist):
 
 
 class Source_db(BaseDocument, Source):
+    normalized_name: Optional[str] = Field(default=None)
+
+    @model_validator(mode="after")
+    def normalize_name_on_creation(self):
+        if self.name:
+            self.normalized_name = self.name.strip().casefold()
+        return self
+
+    @before_event([Insert, Replace, Save])
+    def normalize_name(self):
+        if self.name:
+            self.normalized_name = self.name.strip().casefold()
+
     class Settings:
         name = "sources"
         indexes = [
-            IndexModel([("name", ASCENDING)], unique=True),  # Exact match unique index
+            IndexModel([("normalized_name", ASCENDING)], unique=True),
             IndexModel([("name", TEXT)], default_language="none", language_override="dummy_field"),  # Text search index
             IndexModel([("language", ASCENDING)]),
             IndexModel([("countries", ASCENDING)]),

@@ -40,11 +40,11 @@ class MongoUnitOfWork(IUnitOfWork):
 
     async def __aenter__(self):
         """Enter the context manager and start a transaction session."""
-        self.session = self.client.start_session()
+        self.session = await self.client.start_session()
         
         if self.use_transaction:
             try:
-                await self.session.start_transaction()
+                self.session.start_transaction()
                 self._transaction_started = True
             except Exception as e:
                 print(f"Warning: Could not start transaction (expected in standalone mode). Running without it. Error: {e}")
